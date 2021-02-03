@@ -1,0 +1,480 @@
+%%%%%%%% ICML 2020 EXAMPLE LATEX SUBMISSION FILE %%%%%%%%%%%%%%%%%
+
+\documentclass{article}
+
+% Recommended, but optional, packages for figures and better typesetting:
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{booktabs} % for professional tables
+
+% hyperref makes hyperlinks in the resulting PDF.
+% If your build breaks (sometimes temporarily if a hyperlink spans a page)
+% please comment out the following usepackage line and replace
+% \usepackage{icml2020} with \usepackage[nohyperref]{icml2020} above.
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% Attempt to make hyperref and algorithmic work together better:
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+
+% Use the following line for the initial blind version submitted for review:
+\usepackage{icml2020}
+
+% If accepted, instead use the following line for the camera-ready submission:
+%\usepackage[accepted]{icml2020}
+
+% The \icmltitle you define below is probably too long as a header.
+% Therefore, a short form for the running title is supplied here:
+\icmltitlerunning{Kalman Filter Powered Variational Autoencoder for Acoustic Unit Discovery}
+
+\begin{document}
+
+\twocolumn[
+\icmltitle{Kalman Filter Powered Variational Autoencoder \\ 
+      for Acoustic Unit Discovery}
+
+% It is OKAY to include author information, even for blind
+% submissions: the style file will automatically remove it for you
+% unless you've provided the [accepted] option to the icml2020
+% package.
+
+% List of affiliations: The first argument should be a (short)
+% identifier you will use later to specify author affiliations
+% Academic affiliations should list Department, University, City, Region, Country
+% Industry affiliations should list Company, City, Region, Country
+
+% You can specify symbols, otherwise they are numbered in order.
+% Ideally, you should not use this facility. Affiliations will be numbered
+% in order of appearance and this is the preferred way.
+\icmlsetsymbol{equal}{*}
+
+\begin{icmlauthorlist}
+\icmlauthor{Jayanta Mukherjee}{linkedin} 
+\end{icmlauthorlist}
+
+\icmlaffiliation{linkedin}{LinkedIn Corporation, Mountain View, CA, USA 94043} 
+
+\icmlcorrespondingauthor{Jayanta Mukherjee}{jmukherjee@linkedin.com}
+
+% You may provide any keywords that you
+% find helpful for describing your paper; these are used to populate
+% the "keywords" metadata in the PDF but will not be shown in the document
+\icmlkeywords{Deep Learning, Variational Autoencoder, Kalman Filter, Unsupervised Learning, Acoustic Unit Discovery}
+
+\vskip 0.3in
+]
+
+% this must go after the closing bracket ] following \twocolumn[ ...
+
+% This command actually creates the footnote in the first column
+% listing the affiliations and the copyright notice.
+% The command takes one argument, which is text to display at the start of the footnote.
+% The \icmlEqualContribution command is standard text for equal contribution.
+% Remove it (just {}) if you do not need this facility.
+
+\printAffiliationsAndNotice{}  % leave blank if no need to mention equal contribution
+%\printAffiliationsAndNotice{\icmlEqualContribution} % otherwise use the standard text.
+
+\begin{abstract}
+Variational Autoencoder (VAE) empowers identification of dominant latent structure to approximate Bayesian Inference for observation models. Structured Variational Autoencoders (SVAE) have been shown to provide efficient neural network-based approximate inference in the presence of both discrete and continuous latent variables. Inspired by SVAE, a VAE has been developed with Extended Kalman Filter(EKF)s to model latent variables. The contribution of this paper is to introduce the Extended Kalman Filter (EKF) for Variational Autoencoder (VAE) to the task of acoustic unit discovery combining the benefit of EKF for continuous space modeling of latent variables with the power of deep generative models provided by VAE. The EKF-VAE is designed to identify and leverage the latent variable structure. With Extended Kalman Filter in Linear-Gaussian State-Space models, the accuracy of the acoustic unit discovery has been significantly improved by reducing the training loss by 47\% and root-mean-square error by more than 50\% by the EKF-VAE for acoustic discovery on the TIMIT dataset \cite{timit-article}. The experimental results demonstrated that the EKF-VAE model outperforms Hidden Markov Model (HMM) VAEs \cite{Raj_2017} in acoustic discovery.
+
+\end{abstract}
+
+\section{Introduction}
+\label{intro}
+Many speech technologies such as automatic speech recognition (ASR) and text-to-speech synthesis (TTS) have been used widely around the world. However, most such systems only cover rich-resource languages. For low-resource languages, using such technologies remains limited due to lack of labeled datasets to achieve good performance.
+ 
+ \par
+It is important to develop unsupervised learning algorithms which can use the unlabelled data. For acoustic discovery where methods of speech processing needs to be learnt from raw speech, the task of acoustic discovery can be recognized. Finding the phone-like subword units as acoustic building blocks to discover semantically meaningful linguistic building blocks is necessary. The Variational Autoencoder which can be used for generative purposes as its latent variable models uses deep neural networks to parameterize flexible probability distributions can be an important tool to perform any recognition task including AUD. An auto-encoder encodes some input into a new and usually more compact representation which can be used to reconstruct the input data again. A VAE makes the assumption that the compact representation follows a probabilistic distribution (usually Gaussian) which makes it possible to sample new points and decode them into new data from a trained variational auto-encoder. There have been lots of work being done using Hidden Markov Model (HMM) \cite{Raj_2017} as well as using Latent Variable Models (LVM). One striking difference between these two models is that in the Hidden Markov Model (HMM) the latent variables are discrete while in LVM the latent variables can be continuous. One more difference is that for LVM both the latent and observed variables follow Gaussian Distribution, while for HMM only the observed variables have to be of Gaussian Distribution. LVM is a class of statistical models that seek to model the relationship of observed variables with a set of latent variables to allow for modeling of more complex, generative processes. The inference in these models is often difficult or intractable, motivating a class of variational methods that frame the inference problem as optimization. Variational Autoencoders \cite{Kingma2014}, in particular, have seen success in tasks of image generation \cite{gregor15}.
+
+\par
+On the other hand, the Kalman Filter \cite{Kalman_1960} has been popular as one of state-of-the-art algorithms for estimating dynamic state for noisy and incomplete measurements in discrete-time for multiple decades. The Extended Kalman Filter (EKF) \cite{Julier97anew} handles the system nonlinearities through conversion of nonlinear system equations into linear ones by applying a first order Taylor-series approximation around the current mean error and covariance, so that the traditional linear Kalman filter can be applied. 
+
+\par
+The contribution of this work is to apply the Extended Kalman Filter \cite{ekf_2002} to VAE to improvise the prediction of the words by moving in a direction which will reduce the distance between the actual word and predicted word. Applied Kalman Filter at every training step of the VAE to reduce the error and training losses by as much as 48\% while incurring a maximum overhead of less than 14\% of the epoch duration. Used PyTorch \cite{paszke2017automatic},\cite{NEURIPS2019_9015} Gated Recurrent Unit (GRU) and Recurrent Neural Network (RNN) \cite{SchusterP97} to model the speech recognition aka Acoustic Unit Discovery (AUD). Applied the model to TIMIT \cite{timit-article} and compared its performance against a Hidden Markov Model (HMM) \cite{Raj_2017}.
+
+\par
+The paper is organized as follows. In Section \ref{section:related} discusses about the related work in the field of Variational Autoencoder (VAE) and Kalman Filter. The Section \ref{section:background} recapitulates the core concepts used in building the proposed model, e.g., VAE, Recurrent Neural Network based encoder and decoder. The proposed EKF-VAE model is introduced in Section \ref{section:model} along with model estimation forward algorithms, Kalman Filter and its extended version. Section \ref{section:experiments} describes the AUD experiments being conducted on the TIMIT \cite{timit-article} database, while Section \ref{section:conclusions} offers some conclusions.  
+
+\section{Related Work}
+\label{section:related}
+There has been substantial exploration on both the acoustic discovery and variational autoencoder fronts.
+The attention mechanism \cite{bahdanau2016neural} has been extensively used with RNN encoder-decoder models \cite{wang2016learning} to enhance their ability to deal with long source inputs. A basic RNN-based VAE \cite{bowman2016generating} generative model has been used to explicitly model different properties of sentences to propose two workarounds: 1. KL cost annealing and 2. masking parts of the source and target tokens with special symbols in order to improvise inference by weakening the decoder. The intent was to generate coherent novel sentences as opposed to AUD that interpolate between known sentences using RNN-based VAE.
+
+The Kalman variational autoencoder (KVAE) \cite{nipsFraccaroKPW17} extends ideas from the SVAE, modelling latent state using a Linear Gaussian State Space Model (LGSSM). To allow for non-linear dynamics, the KVAE uses a recognition model to produce time-varying parameters for the LGSSM, weighting a set of K constant parameters using weights generated by a neural network. They applied KVAE to learn a recognition and dynamics model from video and used it to impute missing data and perform long-term generation in four different environments.  
+
+\cite{pmlr-v97-tan19b} proposed decomposing of the overall learning problem into many smaller problems, which are coordinated by the hierarchical mixture, represented by a sum-product network (SPN) and showed that their model outperform classical VAEs on almost all of their experimental benchmarks.
+
+In a recent work on HMM-VAE \cite{Raj_2017}, the Hidden Markov Models (HMMs) was being used as latent models to perform acoustic unit discovery (AUD) in a zero resource scenario, and showed significant improvement in the accuracy of the acoustic unit discovery. The kernel Kalman rule has been proven as an improvement over the Kernel Bayes rule \cite{Gebhardt2017}. The Extended Kalman Filter being superior in modeling dynamic state, applied the Extended Kalman Filter with Variational Auto-encoder to bring further improvement in accuracy in acoustic unit discovery. 
+
+\par
+\cite{pagnoni2018conditional} augmented the encoder-decoder NMT paradigm by introducing a continuous latent variable to model features of the translation process by extending this model with a co-attention mechanism motivated by \cite{parikh2016} in the inference network to show that the conditional variational model improves upon both discriminating attention-based translation and the conditional variational language model for machine translation presented in \cite{zhang2016}. \cite{pagnoni2018conditional} presented some exploration of the learned latent space to illustrate what the latent variable is capable of capturing by utilizing the latent variable without weakening the translation model.
+
+\par
+The contrastive variational autoencoder (cVAE) \cite{abid2019contrastive} was designed to identify and enhance salient latent features by explicitly modeling latent features that are shared between the MNIST dataset \cite{lecun-mnisthandwrittendigit-2010}, as well as those that are enriched in one dataset relative to the other.
+
+\par
+\cite{tjandra2020transformer} built a Transformer-based Vector Quantised Variational AutoEncoder (VQ-VAE) for unsupervised unit discovery system that addresses two major components such as 1) given speech audio, extract subword units in an unsupervised way and 2) re-synthesize the audio from novel speakers. In VQ-VAE, the focus was on the discrete latent representation as opposed to continuous representations costing it to achieve likelihood close but not as good as the continuous representation.
+
+The work proposed in this paper bears some resemblance to the HMM-VAE \cite{Raj_2017} or VQ-VAE \cite{tjandra2020transformer}  which used VAE for acoustic discovery but it is an improvement over VQ-VAE model as it leveraged the continuous latent space representation along with handling the non-linearities of the system. Also, EKF-VAE is an enhancement over HMM-VAE as it reduces the error and loss by taking care of the non-linearities of the system by updating the state, weights and covariance effectively.
+
+\section{Background}
+\label{section:background}
+First, let me give a brief overview of Variational Autoencoder (VAE)s along with Recurrent Neural Network (RNN) based Encoder-Decoder.
+
+\subsection{Variational Autoencoder}
+Variational Autoencoders \cite{Kingma2014} (VAEs) got popularity in unsupervised learning \cite{varadarajan-etal-2008-unsupervised} of complicated distributions.  
+
+For every datapoint Z in the dataset, \cite{doersch2021tutorial} there is one (or many) settings of the latent variables which causes the model to generate something very similar to Z. The objective is to optimize $\theta$ such that we can sample x from p(x) and, with to maximize probability, f(x; $\theta$) with the aim maximize the probability of each Z in the training set under the entire generative process,
+\begin{equation} \label{eq:vaeEq}
+    P(Z) = \int P(Z | x; \theta)P(x) dx
+\end{equation}
+
+Here, $f(x; \theta)$ has been replaced by a distribution $p(Z | x; \theta)$, which allows us to make the dependence of Z on x explicit by using the law of total probability. Based on the principle of "Maximum Likelihood" if the model is likely to produce training set samples, then it is also likely to produce similar samples, and unlikely to produce dissimilar ones.  
+
+\begin{equation}
+    \hat{x}_{ml} = arg \: \underset{x}{max} \:  p(z | x)
+\end{equation}
+ 
+
+In VAEs, the choice of this output distribution is Gaussian, i.e., $p( Z | x; \theta) = \mathcal{N} (Z | f(x; \theta), \sigma^{2}I)$.  
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=.4]{img/VAE.png}
+  \caption{ Generative Model in solid lines for $p_{\theta}(x)p_{\theta}(z|x)$, dashed lines denote the variational approximation $q_{\phi}(x|z)$ to intractable posterior $p_{\theta}(x|z)$.  }
+  \label{fig:fig1}
+\end{figure}
+
+The Kullback-Leibler divergence (KL divergence) between $p(x | Z)$ and Q(x) for some arbitrary Q, can be written while applying Bayes rule to $p(x | Z)$ as follows:
+\begin{equation}
+    \begin{split}
+    K&L[Q(x)\: ||\: p(x | Z)] = \\
+  & E_{x\sim Q}[log\: Q(x) - log\: p(Z | x) - log\: p(x)] + log\: p(Z)
+    \end{split}
+\end{equation}
+
+Here, log p(Z) comes out of the expectation because it does not depend on latent variable x. The objective is to construct a Q which does depend on Z, and in particular, one which makes $KL[Q(x)\: ||\: p(x | z)]$ small:
+\begin{equation}\label{eq:vaeOpt}
+    \begin{split}
+        log\: p(Z) &- KL[Q(x | Z)\: ||\: p(x | Z)] = \\
+        &E_{x\sim Q}[log\: p(Z | x)] - KL[Q(x | Z)\: ||\: p(x)] 
+    \end{split} 
+\end{equation}
+the left hand side of Equation \ref{eq:vaeOpt} has the quantity which needs to be maximized: log p(Z) (plus an error term, which makes Q produce x’s that can reproduce a given Z. The right hand side is optimized by Extended Kalman Filter (or stochastic gradient descent) given the right choice of Q.  
+
+\par
+The first term in Equation \ref{eq:vaeOpt} is a bit more tricky. A possible option is to sample to estimate $E_{x\sim Q}[log\: p(Z | x)]$, but getting a good estimate would require passing many samples of x through f , which would be expensive. The full equation to optimize is:
+\begin{equation}\label{vae2}
+    \begin{split}
+        E_{Z\sim KL}&[log\: p(Z) - KL[Q(x|Z)\: ||\: p(x | Z)] = \\
+        & E_{Z\sim KL}[E_{x\sim Q}[log\: p(Z | x)] - KL[Q(x|Z)\: ||\: p(x)]] 
+    \end{split}  
+\end{equation}
+
+Sample a single value of Z and a single value of x from the distribution $Q(x|Z)$, and compute the gradient of the right-hand side. We can then average the gradient of this function over arbitrarily many samples of X and z, and the result converges to the gradient of Equation \ref{vae2}.  
+\subsection{RNN Based Encoder-Decoder}
+A novel architecture is built leveraging the {\it RNN Encoder-Decoder} proposed by \citet{cho2014learning} and \citet{sutskever2014sequence} to perform acoustic discovery.
+
+In the Encoder-Decoder framework, an encoder reads the input sentence, a
+sequence of vectors $x=\left( x_1, \cdots, x_{T_x} \right)$, into a vector
+$c$. The most common approach is to use an RNN such that  
+\begin{align}
+    \label{eq:forward_state}
+    h_t = f\left( x_{t}, h_{t-1} \right)
+\end{align}
+and
+\begin{align*}
+    c = q\left(\left\{ h_1, \cdots, h_{T_x} \right\}\right),
+\end{align*}
+where $h_t \in \mathcal{R}^{n}$ is a hidden state at time $t$, and $c$ is a vector
+generated from the sequence of the hidden states. $f$ and $q$ are some
+nonlinear functions. \citet{sutskever2014sequence} used an LSTM as $f$ and
+$q\left(\left\{ h_1, \cdots, h_T \right\}\right)=h_T$, for instance.
+
+The decoder \cite{bahdanau2016neural} is trained to predict the next word $y_{t'}$ given the context vector $c$ and all the previously predicted words $\left\{ y_1, \cdots, y_{t'-1}
+\right\}$. In other words, the decoder defines a probability over the translation by decomposing the joint probability into the ordered conditionals:
+\begin{align}
+    \label{eq:decoder_prob}
+    p(y) = \prod_{t=1}^T p(y_t \mid \left\{ y_1, \cdots, y_{t-1} \right\}, c),
+\end{align}
+where $y = \left( y_1, \cdots, y_{T_y} \right)$. With an RNN, each conditional probability is modeled as
+\begin{align}
+    \label{eq:output_rnn}
+    p(y_t \mid \left\{ y_1, \cdots, y_{t-1} \right\}, c) = g(y_{t-1}, x_{t}, c),
+\end{align}
+where $g$ is a nonlinear, multi-layered, function that outputs the probability of $y_t$, and $x_t$ is the hidden state of the RNN.   
+
+\section{Model}
+\label{section:model}
+
+Built the model using RNN, GRU Cell of PyTorch and developed Encoder and Decoder RNN as part of the VAE model for comparing the performance of the proposed model EKF-VAE against the HMM-VAE as baseline. 
+
+\subsection{Kalman Filter \& Extended Kalman Filter} 
+The Kalman filter \cite{SSS06Oxford} is being popular in predicting the next state of dynamic systems. It uses an iterative approach to tune the model to rectify the error. 
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=.22]{img/kalman.png}
+  \caption{ Kalman Filter showing latent and observed variables}
+  \label{fig:fig2}
+\end{figure}
+
+The Kalman filter and smoother are based on the following probabilistic model \cite{JWMiller16}.
+\begin{itemize}
+\item Like a discrete-state HMM as shown in the Figure \ref{fig:fig2}, the sequence of observations $z_{1},z_{2}, . . . , z_{n}$ is modeled jointly along with a sequence of hidden latent states $x_{1}, x_{2}, ....., x_{n}$ with the assumption that:
+\begin{equation}
+p(z_{1:n}, x_{1:n}) = p(x_{1})p(z_{1}|x_{1}) \displaystyle\prod_{j=2}^{n} p(x_{j}|x_{j-1})p(z_{j}|x_{j}) 
+\end{equation}  
+\item Difference from a discrete-state HMM is that each hidden state $x_j$ is modeled as a continuous random variable in $\mathcal{R}^d$ with a multivariate normal distribution.
+ 
+\item The initial distribution $p(x_{1})$, the transition distributions $p(x_{j} | x_{j-1})$ (a.k.a. the "process model") and the emission distributions $p(z_{j} | x_{j} )$ (a.k.a. the "measurement model") are assumed to be
+\begin{equation}
+\begin{split}
+p(x_{1}) = &\mathcal{N} (x_{1} | \mu_{0}, P_{0}) \\
+p(x_j | x_{j - 1}) = &\mathcal{N}  (x_{j}| F x_{j - 1}, Q) \\
+p(z_j | x_j) = &\mathcal{N}  (z_j| Hx_j, R)
+\end{split}
+\end{equation}  
+where
+\begin{itemize}
+    \item $x_{j} \in \mathcal{R}^{d} $ (the state of the system at time step j),
+    \item $z_{j} \in \mathcal{R}^d$ (the measurements at time step j),
+    \item $\mu_{0} \in \mathcal{R}^d$ is an arbitrary vector (the initial “best guess” at the initial state),
+    \item $P_{0} \in \mathcal{R}^{d \times d}$ is a symmetric positive definite matrix (the initial covariance matrix, quantifying the uncertainty about the initial state),
+    \item $F \in \mathcal{R}^{d \times d}$ is an arbitrary matrix (modeling the physics of the process nonlinear vector function, or a linear approximation thereof),
+    \item $Q \in \mathcal{R}^{d \times d}$ is a symmetric positive definite matrix (quantifying the noise/error in the process that is not captured by F),
+    \item $H \in \mathcal{R}^{D \times d}$ is an arbitrary matrix (relating the measurements to the state),
+    \item $R \in \mathcal{R}^{D \times D}$is a symmetric positive definite matrix (quantifying the noise/error of the measurements).
+\end{itemize}
+\item The model can easily be extended to handle time-dependence in F, Q, H, and R, by simply replacing them with $F_{j}, Q_{j}, H_{j}, and R_{j}$ in the expressions above.  
+\end{itemize}   
+
+The Kalman filter (KF) is a method based on recursive Bayesian filtering where the noise in the system is assumed to be Gaussian. The \textbf{Extended Kalman Filter} (EKF) is an extension of the classic Kalman Filter for non-linear systems where non-linearity are approximated using the first or second order derivative.  
+
+\subsection{Extended Kalman Filter: Forward Algorithm}
+The Extended Kalman filter (EKF) is the nonlinear version of the Kalman filter which linearizes about an estimate of the current mean and covariance. 
+
+\textbf{Model and Observation:}\\
+Consider the nonlinear system, described by the difference equation and the observation
+model with additive noise:
+\begin{equation}
+    x_{j} = f(x_{j-1}) + w_{j-1}
+\end{equation}
+\begin{equation}
+    z_{j} = h(x_{j}) + v_{j}
+\end{equation}
+
+\textbf{Initialization:}\\
+The initial state $x_{0}$ is a random vector with known mean $\mu_{0} = E[x_{0}]$ and covariance $P_{0} = E[(x_{0} - \mu_{0})(x_{0} - \mu_{0})^{T} ]$.
+
+In the Extended Kalman Filter forward algorithm, Compute $p(x_j | z_{1:j})$ sequentially for j = 1, 2, ...., n in that order. Here is the generalized form for step j \cite{JWMiller16}, $p(x_{j-1} | z_{1 : j-1}) = \mathcal{N}(x_{j - 1} | \mu_{j - 1}, V_{j - 1})$
+
+\textbf{Model Forecast Step/Predictor:}\\
+The forecast value for $x_{j}$ is $x_{j}^{f}$, which can be expressed as:
+\begin{equation}
+    x_{j}^{f} \approx f(x_{j-1}^{a})
+\end{equation} 
+
+\textbf{Data Assimilation Step/Corrector:}\\
+The state-estimate $x_{j}^{a}$ can be expressed as:
+\begin{equation}
+    x_{j}^{a} \approx x_{j}^{f} + K_{j}(z_{j} - h(x_{j}^{f}))
+\end{equation} 
+Kalman Gain at step j $K_{j}$ can be expressed as:
+\begin{equation}
+    K_{j} = P_{j-1}H^{T}(H P_{j-1}H^{T} + R)^{-1}
+\end{equation}, 
+
+Update the matrix P as it captures the uncertainty about the initial state and improve based on the Kalman Gain $K_{j}$
+\begin{equation}
+    P_{j} = (I - K_{j}H)P_{j-1} 
+\end{equation}
+The update of weights of the neural network $dW_{j}$ can be computed based on the difference of the actual output y and the approximate Jacobian H factored by the Kalman Gain. Approximated Jacobian (H) based on weight, $d\sigma$.
+
+Putting the above equations altogether, the algorithm \ref{alg:ekfalgo} can be described as follows.
+
+\begin{algorithm}[tbh]
+   \caption{Extended Kalman Filter Forward Algorithm}
+   \label{alg:ekfalgo}
+\begin{algorithmic}
+   \STATE {\bfseries Input:} Input state $x_{j}$, Observed data $z_j$, size $n$ and model parameters $P_{0}$, F, Q, H, R, step
+   \STATE {Initialization:}
+   \STATE $ K_{1} = P_{0}H^{T}(HP_{0}H^{T} + R)^{-1} $ \\ 
+   \STATE $ P_{1} = (I - K_{1}H)P_{0} $ \\ 
+   \FOR{$j = 2$ {\bfseries to} $n$}
+      \STATE Approximate Jacobian H
+      \STATE $ K_{j} = P_{j-1}H^{T}(HP_{j-1}H^{T} + R)^{-1} $ \\
+      \STATE $P_{j} = (I - K_{j}H)P_{j-1} $  \\
+      \STATE $ dW_{j} = step K_{j} (z_{j} - H)$ 
+      \STATE $W_{j} = W_{j-1} + dW_{j}$
+      \IF{Q != 0} 
+        \STATE $P_{j} = P_{j} + Q$
+      \ENDIF
+   \ENDFOR 
+\end{algorithmic}
+\end{algorithm} 
+In the above algorithm \ref{alg:ekfalgo}, P is the variance of the state estimation, Q is the variance of the process noise, R captures the variance of the measurement noise.
+
+The Kalman filter is identical to the forward algorithm for discrete-state HMMs, except that it is expressed in terms of $\mu_{j}, V_{j}$ instead of $s_{j} (z_{j})$ (and the derivation involves an integral instead of a sum).
+
+\subsection{EKF-VAE}
+The Extended Kalman Filter based Variational Autoencoder (EKF-VAE) is built on a Sequence-to-Sequence model made up of an EncoderRNN module and a DecoderRNN module which leverage Extended Kalman Filter. 
+
+The forward behavior depends on whether ground-truth is being provided or not. When ground-truth is provided it returns cross-entropy loss, else, it returns predicted word (id).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=.20]{img/EKF-VAE-Loss.png}
+  \caption{EKF-VAE uses EKF for updating weights and state-estimates. A RNN based Encoder-Decoder to reconstruct by generative process.}
+  \label{fig:fig3}
+\end{figure}
+
+The Figure \ref{fig:fig3} shows a schematic diagram of the EKF based VAE which consists of the following:
+\begin{itemize}
+    \item EKF is a neural network to update state-estimation and covariance matrix to provide better prediction.
+    \item RNN Based Encoder-Decoder to perform regenerative actions
+    \item Check against ground-truth (when provided) to compute loss, else, provide reconstructed input.
+    \item Observed and latent variables.
+\end{itemize}
+The EKF updates the weight and covariance matrix to improve the state-estimation. The Encoder RNN is a Bi-directional multi-layer gated recurrent unit (GRU) RNN. The Attention decoder is based on \textbf{Listen, Attend and Spell (LAS)} \cite{chan2015listen}. 
+
+The Decoder RNN applies two simple and effective classes of attentional mechanism: a global approach which always attends to all source words and a local one that only looks at a subset of source words at a time similar to the attentional mechanism proposed by \cite{luong2015effective}. 
+
+The novel EKF-VAE algorithm calls EKF (described in the algorithm \ref{alg:ekfalgo}) to update the weights of the neural network to provide better convergence by predicting the state variables and covariance matrix. Adam optimizer is being used with the $torch.optim.lr\_scheduler.ReduceLROnPlateau$ scheduler as it allows dynamic learning rate reducing based on some validation measurements. The Kalman Filter based Neural Net (EKF) is a feed-forward neural network (NN). The EKF implements the Extended Kalman Filter algorithm to train. Technically, it could potentially be possible to be trained by stochastic gradient descent (SGD). Trained the NN using the feed-forward function to compute the NN output, and the classify function to round a feed-forward to the nearest class values. Also check-pointed the EKF object in the working directory.
+
+\begin{algorithm}[tbh]
+   \caption{EKF Feed Forward Algorithm}
+   \label{alg:ekfFeedAlgo}
+\begin{algorithmic}
+   \STATE {\bfseries Input:} Input training data x, activation function $\sigma$, current weight $W_{j}$ of the neural network \\ 
+   \STATE $l = \sigma (W_{j} x) $ \\
+   \STATE $ h = W_{j} l$  \\
+   \STATE  return h, l
+\end{algorithmic}
+\end{algorithm} 
+
+Updating the weights of the neural network using EKF allows us to predict and update the states. The hypothesis behind weight update using EKF is to capture the non-linearities of the underlying system.
+
+\section{Experiments}
+\label{section:experiments}
+For experimenting Extended Kalman Filter (EKF) based Variational Autoencoder (VAE), applied Extended Kalman Filter based forward prediction specified in algorithm \ref{alg:ekfalgo} along with Feed Forward algorithm \ref{alg:ekfFeedAlgo} at each step of the training to improve the prediction of the dynamic state. As the EKF improves the prediction at each step the error (Root Mean Square) reduces as compared to HMM-VAE).
+ 
+Applied the EKF-VAE model on TIMIT \cite{timit-article} data and computed the error by computing the distance between the actual and predicted data and learning from it.
+
+\subsection{Dataset: TIMIT}
+The Texas Instruments/Massachusetts Institute of Technology (TIMIT) \cite{timit-article} corpus of read
+speech has been designed to provide speech data for the acquisition of acoustic-phonetic knowledge and for the development and evaluation of automatic speech recognition systems. TIMIT contains speech from 630 speakers representing 8 major dialect divisions of American English, each speaking 10 phonetically-rich sentences. The TIMIT corpus includes time-aligned orthographic, phonetic, and word transcriptions, as well as speech waveform data for each spoken sentence.
+
+The acoustic features are 80-dimensional filter banks. They are stacked every 3 consecutive frames, so the time resolution is reduced. Following the standard recipe, used a 462-speaker training set with all SA records removed. Outputs are mapped to 39 phonemes when evaluating.
+
+\subsection{Experiment Settings}
+The EKF-VAE consists of an Encoder Recurrent Neural Network (RNN) and an Decoder Recurrent Neural Network (RNN). The Encoder RNN consists of three encoder layers and the Decoder RNN consists of two decoder layers with Relu activation. 
+The encoder has an input size of 240. Both encoder and decoder have a hidden unit size of 256. The target size is equal to the vocabulary size of the tokenizer.For training purposes, used a batch size of 64 with a dropout percentage of 0.5.
+
+\subsection{Results}
+Trained the EKF-VAE algorithm to perform the acoustic discovery on TIMIT data. The algorithm was trained for 50 iterations and then 100 iterations. Observed that the Root Mean Square Error (RMSE) goes down very fast and but the dev loss plateaued for both EKF-VAE as well as HMM-VAE, but the rate of reduction of RMSE is faster for ELF-VAE and remained even as the number of iterations have been increased.
+
+\begin{figure*}[h]
+  \centering
+  \begin{minipage}[b]{0.4\textwidth}
+    \includegraphics[width=\textwidth]{img/TrainLoss.pdf}
+    \caption{Training Loss}
+    \label{fig:fig4}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.4\textwidth}
+    \includegraphics[width=\textwidth]{img/DevLoss.pdf}
+    \caption{Evaluation/Dev Loss}
+    \label{fig:fig5}
+  \end{minipage} 
+\end{figure*}
+As shown in Figure \ref{fig:fig4}, the EKF-VAE achieved more than 47\% reduction in training loss at the end of 100 iterations (epochs) and experienced a maximum of 49\% reduction in dev loss individual epoch as shown in Figure \ref{fig:fig5}. Although both the HMM and EKF are Gaussian based, the training loss reduction is better for EKF-VAE (shown in green) as compared to HMM-VAE as EKF handles the non-linearity and predicts the dynamic state better. As shown in Figure \ref{fig:fig5}, the evaluation (dev) loss has increased in EKF-VAE in later iterations and HMM over-performed by 10\%.
+
+\begin{figure}[H] 
+    \includegraphics[scale=.55]{img/ErrorRate.pdf}
+    \caption{Error Rate}
+    \label{fig:fig6}
+\end{figure}
+
+The Kalman filter seems to be effective in modeling language as word utterances can be modeled as discrete occurrences of words. Applying Kalman Filter at each step forced the current state uncertainty $P_{j}$ to converge faster causing error rate to go down. For acoustic discovery use-case, the error rate has been reduced up to 37\% by Extended Kalman Filter based VAE (EKF-VAE) over HMM VAE as shown in Figure \ref{fig:fig6}. 
+
+\begin{figure}[htb]   
+    \includegraphics[scale=.5]{img/RMSE.pdf}
+    \caption{Root Mean Square Error}
+    \label{fig:fig7} 
+\end{figure}
+
+The error has been computed based on distance of expected and predicted word. The root-mean square error (RMSE) as shown in Figure \ref{fig:fig7} reduced by 57\% at individual epoch in EKF-VAE as compared to its HMM-VAE counterpart. 
+
+\begin{figure}[htb] 
+    \includegraphics[scale=.5]{img/EpochDuration.pdf}
+    \caption{Epoch Duration Comparison between HMM-based and EKF-based VAE}
+    \label{fig:fig8}
+\end{figure}
+
+But, as the EKF is being called in each iteration, it increases the training time. It is essential to understand the trade-off between incurring an additional cost of time for extended kalman filter based prediction to improve convergence and the error reduction rate. The additional Extended Kalman Filter computation increases the training time at every iteration which resulted in less than 14\% increase in epoch duration as shown in Figure \ref{fig:fig8}.  
+
+\begin{figure}[H] 
+    \includegraphics[scale=.5]{img/lr.pdf}
+    \caption{Learning Rate Comparison between HMM-VAE and EKF-VAE}
+    \label{fig:fig9}
+\end{figure}
+
+As shown in Figure \ref{fig:fig9} the learning rate between HMM-VAE and EKF-VAE, the learning rate for HMM-VAE dropped to 0.00005 while the learning rate for EKF-VAE remained at 0.00015. The HMM-VAE kept learning at a higher rate potentially can cause an oscillation in predicting the words. The lower the learning rate, the lesser is the oscillations and hence can expect to have a better convergence.
+
+The EKF-VAE has predicted the words more accurately than its HMM rivals as it predicted the discrete state more accurately. EKF kept computing the Kalman Gain at each step to decide how much to tune/update the weights to provide a better prediction resulting in superior acoustic discovery. 
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=.25]{img/EKF-Predict.png}
+  \caption{ Extended Kalman Filter based VAE Prediction}
+  \label{fig:fig10}
+\end{figure}
+The EKF based predictions as shown in Figure \ref{fig:fig10} and Figure \ref{fig:fig11} demonstrates the actual word prediction.
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=.42]{img/TIMIT_EKF.png}
+  \caption{Acoustic Discovery}
+  \label{fig:fig11}
+\end{figure}
+Using RNN-Based Encoder-Decoder along with the attention model allowed us to have better sentence prediction. 
+
+\section{Conclusions}
+\label{section:conclusions}
+The proposed an Extended Kalman Filter (EKF) Powered Variational Autoencoder (VAE) for acoustic discovery has achieved a faster convergence as it models the latent space better. From the results, it is evident that the EKF based Variational Model outperforms the HMM based Variational model. The EKF-VAE provides significant improvement over HMM based VAE due to better prediction of the dynamic state by the Kalman filter. Finally, it is shown that the EKF-VAE can reduce the error significantly (~49\%) to assure superior prediction accuracy.
+
+%%%%%%%%%%%%% Acknowledgements %%%%%%%%%%%%%
+%\footnotesize
+\section{Acknowledgements}
+Thanks to Prof Bhiksha Raj Ramakrishnan of the Carnegie Mellon University for his immense encouragement and suggestions. Thanks to Nihit Purwar for his support. Thanks to my beautiful wife Mahaswata for motivating me to pursue my passion and buying an NVIDIA RTX2080 based laptop on which all the experiments were performed.
+
+%%%%%%%%%%%%%%   Bibliography   %%%%%%%%%%%%%%
+\normalsize
+\bibliography{references}
+\bibliographystyle{icml2020}
+
+% In the unusual situation where you want a paper to appear in the
+% references without citing it in the main text, use \nocite
+%\nocite{langley00}
+
+
+
+
+\end{document}
+
+% This document was modified from the file originally made available by
+% Pat Langley and Andrea Danyluk for ICML-2K. This version was created
+% by Iain Murray in 2018, and modified by Alexandre Bouchard in
+% 2019 and 2020. Previous contributors include Dan Roy, Lise Getoor and Tobias
+% Scheffer, which was slightly modified from the 2010 version by
+% Thorsten Joachims & Johannes Fuernkranz, slightly modified from the
+% 2009 version by Kiri Wagstaff and Sam Roweis's 2008 version, which is
+% slightly modified from Prasad Tadepalli's 2007 version which is a
+% lightly changed version of the previous year's version by Andrew
+% Moore, which was in turn edited from those of Kristian Kersting and
+% Codrina Lauth. Alex Smola contributed to the algorithmic style files.
+
+
